@@ -29,7 +29,8 @@ function blitzusers_add_pages()
 
 function blitzusers_manage_page()
 {
-	echo "<br/>Hello Doc,";
+	
+	blitz_dashboard_widget_function();
 }
 
 function blitzusers_manage_profile() 
