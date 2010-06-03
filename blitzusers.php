@@ -19,12 +19,134 @@ function blitzusers_add_pages()
 {
 	$title_dashboard = __('Dashboard', 'blitzusers');
 	$title_profile	 = __('Blitz Profile', 'blitzusers');
+	$title_admin	 = __('Blitz Admin', 'blitzusers');
 
 	$page = add_menu_page('Blitz Marketing', 'Blitz Marketing', 'administrator', 'blitzusers', 'blitzusers_manage_page');
 	add_submenu_page('blitzusers', $title_dashboard, $title_dashboard, 'administrator', 'blitzusers', 'blitzusers_manage_page');
 	add_submenu_page('blitzusers', $title_profile, $title_profile, 'administrator', 'blitzprofile', 'blitzusers_manage_profile');
+	if ( get_current_user_id() == 1 ) {
+		add_submenu_page('blitzusers', $title_admin, $title_admin, 'administrator', 'blitzadmin', 'blitzusers_admin_profile');
+	}
 
+}
 
+function blitzusers_admin_profile()
+{
+	global $wpdb;
+
+	$all_logins = $wpdb->get_results("SELECT ID,user_login,user_email FROM $wpdb->users, $wpdb->usermeta WHERE $wpdb->users.ID = $wpdb->usermeta.user_id AND meta_key = '".$wpdb->prefix."capabilities' ORDER BY user_login");
+	$users = array();
+	foreach ($all_logins as $login) {
+		array_push($users, $login->user_login);
+	}
+
+	// use JavaScript SACK library for Ajax
+	wp_print_scripts( array( 'sack' ));
+	
+	if (isset($_POST['action']) && $_POST['action'] == 'update_user_primary_email') 
+	{
+		$primary_email = $_POST['newemail'];
+		$user_login = $_POST['bloguser'];
+		$user = get_userdatabylogin($user_login);
+		if($user){
+			$user_id = $user->ID;
+		}
+		
+		if (!empty($primary_email)) {
+			update_usermeta( $user_id, "primary_email", $primary_email );
+		}
+	}
+	
+	echo "<div class=\"wrap\">";
+	echo "<h2>Blitz User Management</h2>";
+	
+	?>
+	
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+	<script type="text/javascript">
+	$(document).ready(function(){	
+		$("#bloguser").change(function() {
+			obj = document.getElementById("bloguser").value;
+			check_user_email(obj) ;
+		})
+
+		function check_user_email(obj) {
+			var mysack = new sack( 
+			       "<?php bloginfo( 'wpurl' ); ?>/wp-admin/admin-ajax.php" );
+			mysack.execute = 1;
+			mysack.method = 'POST';
+			mysack.setVar( "action", "blitz_special_action" );
+			mysack.setVar( "user_name", obj );
+			mysack.onError = function() { alert('Ajax error in check user email' )};
+			mysack.runAJAX();
+			return true;
+		}
+		
+	});
+	</script>
+	
+	<form method="post">
+		<?php
+		echo "Select a Username: ";
+		echo "<select name='bloguser' id='bloguser'><option value=''>Select..</option>";
+		
+		foreach($users as $name){ 
+			$selected = ($name == 'default') ? ('selected=\"selected\" ') : ('');
+			echo('<option '. $selected . 'value='.$name.' >'.$name.'</option>');
+		} 
+		echo "</select>";
+		?>
+	
+		<br/>
+		<input type="hidden" name="action" value="update_user_primary_email" />
+		Primary e-mail: <input type="text" disabled size="30" value="current email" name="email" id="email"></input>
+		<input type="text" size="30" value="new email" name="newemail" id="newemail"></input><br/>
+		<small>this is the 'mail to' address that will be used in all the contact forms</small>
+		<br/>
+		<input type="submit" value="Submit"></input>
+	</form>
+	</div>		
+	<?php
+}
+
+add_action('wp_ajax_blitz_special_action', 'blitzusers_action_callback');
+add_action('wp_ajax_nopriv_blitz_special_action', 'blitzusers_action_callback');
+
+function check_email($user_name) {
+	global $wpdb;
+ 
+	$user = get_userdatabylogin($user_name);
+	if($user){
+		$user_id = $user->ID;
+		$single = true;
+  		$primary_email = get_usermeta( $user_id, "primary_email", $single); 
+  		if (empty($primary_email))
+  			return "no primary email yet";
+  		
+  		return $primary_email; 	
+	}
+	
+	return "no such user";
+}
+
+// TO DO: Check request came from valid source here
+function blitzusers_action_callback() { 	
+  // read submitted information
+  $user_name = mysql_real_escape_string($_POST['user_name']);
+
+  // In this example, assume a) The processing code sets global
+  // variable $error to a message if there is an error
+  //  b) If there is no error, $results contains
+  // the HTML to put into the results DIV on the screen
+  $results = check_email($user_name);
+  
+  $error = "";
+  if( $error ) {
+   die( "alert('$error')" ); 
+  }  
+
+  // Compose JavaScript for return
+  die( "document.getElementById('email').value = '$results'" );
 }
 
 function blitzusers_manage_page()
