@@ -47,13 +47,39 @@ function blitzusers_admin_profile()
 	{
 		$primary_email = $_POST['newemail'];
 		$user_login = $_POST['bloguser'];
+		$youtube_video = $_POST['new_youtube_video'];
+		$google_map = $_POST['new_google_map_address'];
+		$twitter_user = $_POST['new_twitter_user'];
+		$youtube = $_POST['new_youtube_user'];
+		$facebook = $_POST['new_facebook_user'];
+				
 		$user = get_userdatabylogin($user_login);
 		if($user){
 			$user_id = $user->ID;
 		}
 		
-		if (!empty($primary_email)) {
+		if (!empty($primary_email) && ($primary_email != "new email")) {
 			update_usermeta( $user_id, "primary_email", $primary_email );
+		}
+		
+		if (!empty($youtube_video) && ($youtube_video != "new YouTube video")) {
+			update_usermeta( $user_id, "youtube_video", $youtube_video );
+		}
+		
+		if (!empty($google_map) && ($google_map != "new map address")) {
+			update_usermeta( $user_id, "google_map_address", $google_map );
+		}
+		
+		if (!empty($twitter_user) && ($twitter_user != "new twitter user")) {
+			update_usermeta( $user_id, "twitter_user", $twitter_user );
+		}
+			
+		if (!empty($youtube) && ($youtube != "new youtube user")) {
+			update_usermeta( $user_id, "youtube_user", $youtube );
+		}
+		
+		if (!empty($facebook) && ($facebook != "new facebook user")) {
+			update_usermeta( $user_id, "facebook_user", $facebook );
 		}
 	}
 	
@@ -61,6 +87,8 @@ function blitzusers_admin_profile()
 	echo "<h2>Blitz User Management</h2>";
 	
 	?>
+	<div id="wpbody">	
+	<ul id="adminmenu">
 	
 	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
 	<script type="text/javascript">
@@ -97,56 +125,84 @@ function blitzusers_admin_profile()
 		echo "</select>";
 		?>
 	
-		<br/>
+		<br/><br/>
 		<input type="hidden" name="action" value="update_user_primary_email" />
 		Primary e-mail: <input type="text" disabled size="30" value="current email" name="email" id="email"></input>
 		<input type="text" size="30" value="new email" name="newemail" id="newemail"></input><br/>
 		<small>this is the 'mail to' address that will be used in all the contact forms</small>
+		<br/><br/>
+		YouTube video: <input type="text" disabled size="30" value="current YouTube video" name="youtube_video" id="youtube_video"></input>
+		<input type="text" size="30" value="new YouTube video" name="new_youtube_video" id="new_youtube_video"></input><br/>
 		<br/>
-		<input type="submit" value="Submit"></input>
+		Google Map Address: <input type="text" disabled size="30" value="current map address" name="google_map_address" id="google_map_address"></input>
+		<input type="text" size="30" value="new map address" name="new_google_map_address" id="new_google_map_address"></input><br/>
+		<br/>
+		<label for="twitter_user"><?php _e('Twitter:'); ?></label>
+		<input name="twitter_user" type="text" size="25" disabled id="twitter_user" value="current twitter user"></input>
+		<input name="new_twitter_user" type="text" size="25" id="new_twitter_user" value="new twitter user"></input>
+		<label for="youtube_user"><?php _e('YouTube:'); ?></label>
+		<input name="youtube_user" type="text" size="25" disabled id="youtube_user" value="current youtube user"></input>
+		<input name="new_youtube_user" type="text" size="25" id="new_youtube_user" value="new youtube user"></input>
+		<label for="facebook_user"><?php _e('Facebook:'); ?></label>
+		<input name="facebook_user" type="text" size="25" disabled id="facebook_user" value="current facebook user"></input>
+		<input name="new_facebook_user" type="text" size="25" id="new_facebook_user" value="new facebook user"></input>
+		<br/><br/>
+		<input type="submit" value="Submit"></input>		
 	</form>
-	</div>		
+	</div>
+			
 	<?php
 }
 
 add_action('wp_ajax_blitz_special_action', 'blitzusers_action_callback');
 add_action('wp_ajax_nopriv_blitz_special_action', 'blitzusers_action_callback');
 
-function check_email($user_name) {
-	global $wpdb;
- 
-	$user = get_userdatabylogin($user_name);
-	if($user){
-		$user_id = $user->ID;
-		$single = true;
-  		$primary_email = get_usermeta( $user_id, "primary_email", $single); 
-  		if (empty($primary_email))
-  			return "no primary email yet";
-  		
-  		return $primary_email; 	
-	}
-	
-	return "no such user";
-}
-
 // TO DO: Check request came from valid source here
-function blitzusers_action_callback() { 	
+function blitzusers_action_callback() { 
+  global $wpdb;
+  	
   // read submitted information
   $user_name = mysql_real_escape_string($_POST['user_name']);
 
-  // In this example, assume a) The processing code sets global
-  // variable $error to a message if there is an error
-  //  b) If there is no error, $results contains
-  // the HTML to put into the results DIV on the screen
-  $results = check_email($user_name);
-  
+  $user = get_userdatabylogin($user_name);
+
+  if($user){
+		$user_id = $user->ID;
+		$single = true;
+  		$primary_email = get_usermeta( $user_id, "primary_email", $single);
+  		$youtube_video = get_usermeta( $user_id, "youtube_video", $single);
+  		$google_map_address = get_usermeta( $user_id, "google_map_address", $single);
+  		$twitter = get_usermeta( $user_id, "twitter_user", $single);
+  		$youtube = get_usermeta( $user_id, "youtube_user", $single);
+  		$facebook = get_usermeta( $user_id, "facebook_user", $single);
+  		
+  		if (empty($primary_email))
+  			$primary_email = "no primary email yet";
+  		if (empty($youtube_video))
+  			$youtube_video = "no youtube video yet";
+  		if (empty($google_map_address))
+  			$google_map_address = "no google map address yet";
+  		if (empty($twitter))
+  			$twitter = "no twitter id yet";
+  		if (empty($youtube))
+  			$youtube = "no youtube id yet";
+  		if (empty($facebook))
+  			$facebook = "no facebook id yet";		
+  }
+    
   $error = "";
   if( $error ) {
    die( "alert('$error')" ); 
   }  
 
   // Compose JavaScript for return
-  die( "document.getElementById('email').value = '$results'" );
+  die( "document.getElementById('email').value = '$primary_email';
+  		document.getElementById('youtube_video').value = '$youtube_video';
+  		document.getElementById('google_map_address').value = '$google_map_address';
+  		document.getElementById('twitter_user').value = '$twitter';
+  		document.getElementById('youtube_user').value = '$youtube';
+  		document.getElementById('facebook_user').value = '$facebook';
+  " );
 }
 
 function blitzusers_manage_page()
